@@ -4,62 +4,239 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Caça-Palavras Profissional</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7fafc;
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        /* PAINEL DE CONTROLE */
+        #controle {
+            background: white;
+            padding: 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%; max-width: 550px; margin-bottom: 30px;
+            position: relative;
+        }
+
+        h1 { font-size: 20px; color: #1a365d; margin-top: 0; display: flex; align-items: center; justify-content: space-between; }
+        .config-group { margin-bottom: 15px; }
+        .config-row { display: flex; gap: 15px; margin-bottom: 10px; }
+        .config-row label { flex: 1; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 60px; resize: vertical; }
+
+        /* ÍCONE DE CONFIGURAÇÃO E ÁREA EXPANSÍVEL */
+        .btn-config-toggle {
+            background: none; border: none; cursor: pointer; font-size: 20px; color: #4a5568; padding: 5px;
+        }
+        #sub-configuracoes {
+            background: #edf2f7; padding: 15px; border-radius: 6px; margin-bottom: 15px; display: none;
+        }
+        .color-picker-container { display: flex; align-items: center; gap: 10px; }
+        .color-picker-container input[type="color"] { width: 50px; height: 35px; padding: 0; border: none; cursor: pointer; }
+
+        /* BOTÕES */
+        .btn-container { display: flex; gap: 10px; flex-wrap: wrap; }
+        button.main-btn {
+            background-color: #1a365d; color: white; border: none;
+            padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; flex: 1; min-width: 140px;
+        }
+        button.main-btn:hover { background-color: #2a4d7c; }
+        .btn-pdf { background-color: #e53e3e; }
+        .btn-pdf:hover { background-color: #c53030; }
+        .btn-print { background-color: #2f855a; }
+        .btn-print:hover { background-color: #38a169; }
+
+        /* REGRAS CRUCIAIS PARA EVITAR A SEGUNDA FOLHA VAZIA */
+        html, body { height: auto; }
+        
+        /* ESTILO DA FOLHA A4 (CONTEÚDO DO PDF) */
+        #folha-a4-wrapper {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+        
+        #folha-a4 {
+            background: white; 
+            width: 210mm; 
+            min-height: 296mm; /* Ajustado levemente para evitar quebra de página por 1px */
+            height: max-content;
+            padding: 20mm 15mm; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            box-sizing: border-box; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .header-jogo { text-align: center; margin-bottom: 25px; width: 100%; }
+        .header-jogo h2 { font-size: 28px; margin: 0 0 5px 0; color: #1a365d; text-transform: uppercase; letter-spacing: 1px; }
+        .header-jogo p { font-size: 14px; margin: 0; color: #4a5568; font-style: italic; }
+
+        /* GRADE E BORDAS CUSTOMIZÁVEIS */
+        table#grade-letras { 
+            border-collapse: collapse; 
+            border: 3px solid #1a202c; 
+            margin-bottom: 30px; 
+        }
+        table#grade-letras td {
+            border: 1px solid #cbd5e0; 
+            text-align: center;
+            vertical-align: middle; 
+            font-weight: bold; 
+            font-family: monospace; 
+            color: #1a202c;
+        }
+
+        .lista-palavras-container { width: 100%; border-top: 2px dashed #cbd5e0; padding-top: 15px; margin-top: auto; }
+        .lista-palavras-container h3 { font-size: 16px; margin: 0 0 10px 0; color: #2c5282; text-transform: uppercase; }
+        ul#lista-palavras { list-style: none; padding: 0; margin: 0; width: 100%; }
+        ul#lista-palavras li { display: inline-block; width: 24%; margin-bottom: 8px; font-size: 14px; color: #4a5568; font-weight: 500; }
+
+        /* REGRAS DE IMPRESSÃO DO NAVEGADOR */
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            #folha-a4 { box-shadow: none; margin: 0; padding: 20mm 15mm; width: 210mm; min-height: 100%; }
+            html, body { max-height: 100%; overflow: hidden; }
+        }
+    </style>
 </head>
 <body>
+
     <div id="controle" class="no-print">
-        <h1>Gerador de Caça-Palavras</h1>
-        <div class="config-group">
+        <h1>
+            Gerador de Caça-Palavras
+            <button class="btn-config-toggle" onclick="toggleConfig()" title="Configurações Visuais">⚙️ Customizar</button>
+        </h1>
+        
+        <div id="sub-configuracoes">
+            <div class="config-row">
+                <label>Título do Jogo:
+                    <input type="text" id="tituloInput" value="Caça-Palavras" oninput="atualizarTextos()">
+                </label>
+            </div>
+            <div class="config-row">
+                <label>Subtítulo / Instruções:
+                    <input type="text" id="subtituloInput" value="Encontre as palavras escondidas na grade abaixo" oninput="atualizarTextos()">
+                </label>
+            </div>
+            <div class="config-row">
+                <label class="color-picker-container">Cor da Borda Grossa (Externa):
+                    <input type="color" id="corBordaExterna" value="#1a202c" onchange="atualizarCores()">
+                </label>
+                <label class="color-picker-container">Cor das Linhas (Internas):
+                    <input type="color" id="corBordaInterna" value="#cbd5e0" onchange="atualizarCores()">
+                </label>
+            </div>
+        </div>
+
+        <div class="config-row">
             <label>Linhas: <input type="number" id="linhas" value="20" min="5" max="40"></label>
             <label>Colunas: <input type="number" id="colunas" value="20" min="5" max="40"></label>
         </div>
         <div class="config-group">
             <label>Palavras (separadas por vírgula):</label>
-            <textarea id="palavrasInput">Forma, Casa, Delta, Vetorial</textarea>
+            <textarea id="palavrasInput">Python, Codigo, Matriz, Internet, Web, Github, Script</textarea>
         </div>
-        <button onclick="gerarCacaPalavras()">Gerar Caça-Palavras</button>
-        <button onclick="window.print()" class="btn-print">Imprimir / Salvar PDF</button>
+        
+        <div class="btn-container">
+            <button class="main-btn" onclick="gerarCacaPalavras()">Gerar Novo</button>
+            <button class="main-btn btn-pdf" onclick="baixarPDFDireto()">Baixar .PDF Direto</button>
+            <button class="main-btn btn-print" onclick="window.print()">Imprimir Manual</button>
+        </div>
     </div>
 
-    <div id="folha-a4">
-        <div class="header-jogo">
-            <h2>Caça-Palavras</h2>
-            <p>Encontre as palavras escondidas na grade abaixo</p>
-        </div>
-        
-        <table id="grade-letras"></table>
-        
-        <div class="lista-palavras-container">
-            <h3>Palavras a encontrar:</h3>
-            <ul id="lista-palavras"></ul>
+    <div id="folha-a4-wrapper">
+        <div id="folha-a4">
+            <div class="header-jogo">
+                <h2 id="tituloJogo">Caça-Palavras</h2>
+                <p id="subtituloJogo">Encontre as palavras escondidas na grade abaixo</p>
+            </div>
+            
+            <table id="grade-letras"></table>
+            
+            <div class="lista-palavras-container">
+                <h3>Palavras a encontrar:</h3>
+                <ul id="lista-palavras"></ul>
+            </div>
         </div>
     </div>
 
     <script>
-        // Lógica do Caça-Palavras em JavaScript
+        // Alterna a exibição das configurações avançadas (engrenagem)
+        function toggleConfig() {
+            const sub = document.getElementById('sub-configuracoes');
+            sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Atualiza dinamicamente o título e subtítulo enquanto o usuário digita
+        function atualizarTextos() {
+            document.getElementById('tituloJogo').innerText = document.getElementById('tituloInput').value;
+            document.getElementById('subtituloJogo').innerText = document.getElementById('subtituloInput').value;
+        }
+
+        // Atualiza as cores das bordas em tempo real usando os seletores de cor (sliders)
+        function atualizarCores() {
+            const corExterna = document.getElementById('corBordaExterna').value;
+            const corInterna = document.getElementById('corBordaInterna').value;
+            
+            const tabela = document.getElementById('grade-letras');
+            tabela.style.borderColor = corExterna;
+
+            const celulas = tabela.getElementsByTagName('td');
+            for(let td of celulas) {
+                td.style.borderColor = corInterna;
+            }
+        }
+
         function gerarCacaPalavras() {
             const linhas = parseInt(document.getElementById('linhas').value);
             const colunas = parseInt(document.getElementById('colunas').value);
             const texto = document.getElementById('palavrasInput').value;
-            const palavras = texto.split(',').map(p => p.trim().toUpperCase()).filter(p => p);
+            
+            const palavras = texto.split(',')
+                                  .map(p => p.trim().toUpperCase())
+                                  .filter(p => p.length > 0);
 
-            // Criar grade vazia
-            let grade = Array(linhas).fill().map(() => Array(colunas).fill(''));
+            if (palavras.length === 0) {
+                alert("Por favor, digite pelo menos uma palavra.");
+                return;
+            }
 
-            // Direções de inserção
+            const limiteMaximo = Math.max(linhas, colunas);
+            for (let p of palavras) {
+                if (p.length > limiteMaximo) {
+                    alert(`A palavra "${p}" é muito longa (${p.length} letras) para uma grade de ${linhas}x${colunas}. Aumente a grade.`);
+                    return;
+                }
+            }
+
+            let grade = [];
+            for (let l = 0; l < linhas; l++) {
+                grade.push(new Array(colunas).fill(''));
+            }
+
             const direcoes = [
                 [0, 1], [1, 0], [1, 1], [-1, 1],
                 [0, -1], [-1, 0], [-1, -1], [1, -1]
             ];
 
-            // Ordenar por tamanho para facilitar encaixe
             palavras.sort((a, b) => b.length - a.length);
 
             palavras.forEach(palavra => {
                 let encaixou = false;
                 let tentativas = 0;
 
-                while (!encaixou && tentativas < 300) {
+                while (!encaixou && tentativas < 500) {
                     const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
                     const l = Math.floor(Math.random() * linhas);
                     const c = Math.floor(Math.random() * colunas);
@@ -69,7 +246,8 @@
 
                     if (fimL >= 0 && fimL < linhas && fimC >= 0 && fimC < colunas) {
                         let podeInserir = true;
-                        for (let i = 0; i < palavra.length; i++) {
+                        
+                        for (let i = 0; i < palabra.length; i++) {
                             const currL = l + dir[0] * i;
                             const currC = c + dir[1] * i;
                             if (grade[currL][currC] !== '' && grade[currL][currC] !== palavra[i]) {
@@ -89,7 +267,6 @@
                 }
             });
 
-            // Preencher espaços vazios com letras aleatórias
             const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
             for (let l = 0; l < linhas; l++) {
                 for (let c = 0; c < colunas; c++) {
@@ -99,11 +276,12 @@
                 }
             }
 
-            // Desenhar a grade na tela e ajustar tamanho das células
             const tabela = document.getElementById('grade-letras');
             tabela.innerHTML = '';
-            const tamanhoCelula = Math.min(30, Math.floor(540 / colunas));
-            const tamanhoFonte = Math.max(10, Math.floor(tamanhoCelula * 0.6));
+            
+            // Layout responsivo matemático para caber na folha A4 fixa
+            const tamanhoCelula = Math.min(32, Math.floor(540 / colunas));
+            const tamanhoFonte = Math.max(9, Math.floor(tamanhoCelula * 0.65));
 
             for (let l = 0; l < linhas; l++) {
                 const tr = document.createElement('tr');
@@ -118,7 +296,6 @@
                 tabela.appendChild(tr);
             }
 
-            // Listar palavras abaixo
             const ul = document.getElementById('lista-palavras');
             ul.innerHTML = '';
             palavras.forEach(p => {
@@ -126,10 +303,32 @@
                 li.innerText = p;
                 ul.appendChild(li);
             });
+
+            // Re-aplica as cores customizadas na nova grade gerada
+            atualizarCores();
         }
 
-        // Gerar um inicial ao carregar a página
-        window.onload = gerarCacaPalavras;
+        // FUNÇÃO PARA SALVAR E BAIXAR EM PDF DIRETO
+        function baixarPDFDireto() {
+            const elemento = document.getElementById('folha-a4');
+            const tituloParaArquivo = document.getElementById('tituloInput').value.toLowerCase().replace(/\s+/g, '_');
+            
+            const opcoes = {
+                margin:       0,
+                filename:     `${tituloParaArquivo || 'caca_palavras'}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Executa a biblioteca html2pdf
+            html2pdf().set(opcoes).from(elemento).save();
+        }
+
+        window.onload = function() {
+            atualizarTextos();
+            gerarCacaPalavras();
+        };
     </script>
 </body>
 </html>

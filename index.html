@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Caça-Palavras Profissional</title>
+    <!-- Incluindo biblioteca para download direto em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -65,7 +66,7 @@
         #folha-a4 {
             background: white; 
             width: 210mm; 
-            min-height: 296mm; /* Ajustado levemente para evitar quebra de página por 1px */
+            min-height: 296mm;
             height: max-content;
             padding: 20mm 15mm; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -112,12 +113,14 @@
 </head>
 <body>
 
+    <!-- PAINEL DE CONTROLE (Invisível na impressão) -->
     <div id="controle" class="no-print">
         <h1>
             Gerador de Caça-Palavras
             <button class="btn-config-toggle" onclick="toggleConfig()" title="Configurações Visuais">⚙️ Customizar</button>
         </h1>
         
+        <!-- Área expandida pelo ícone de engrenagem -->
         <div id="sub-configuracoes">
             <div class="config-row">
                 <label>Título do Jogo:
@@ -155,6 +158,7 @@
         </div>
     </div>
 
+    <!-- CONTAINER DA FOLHA A4 -->
     <div id="folha-a4-wrapper">
         <div id="folha-a4">
             <div class="header-jogo">
@@ -190,11 +194,12 @@
             const corInterna = document.getElementById('corBordaInterna').value;
             
             const tabela = document.getElementById('grade-letras');
-            tabela.style.borderColor = corExterna;
-
-            const celulas = tabela.getElementsByTagName('td');
-            for(let td of celulas) {
-                td.style.borderColor = corInterna;
+            if (tabela) {
+                tabela.style.borderColor = corExterna;
+                const celulas = tabela.getElementsByTagName('td');
+                for(let td of celulas) {
+                    td.style.borderColor = corInterna;
+                }
             }
         }
 
@@ -236,7 +241,7 @@
                 let encaixou = false;
                 let tentativas = 0;
 
-                while (!encaixou && tentativas < 500) {
+                while (!encaixou && tentatives < 500) {
                     const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
                     const l = Math.floor(Math.random() * linhas);
                     const c = Math.floor(Math.random() * colunas);
@@ -247,7 +252,7 @@
                     if (fimL >= 0 && fimL < linhas && fimC >= 0 && fimC < colunas) {
                         let podeInserir = true;
                         
-                        for (let i = 0; i < palabra.length; i++) {
+                        for (let i = 0; i < palavra.length; i++) {
                             const currL = l + dir[0] * i;
                             const currC = c + dir[1] * i;
                             if (grade[currL][currC] !== '' && grade[currL][currC] !== palavra[i]) {
@@ -321,7 +326,6 @@
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Executa a biblioteca html2pdf
             html2pdf().set(opcoes).from(elemento).save();
         }
 

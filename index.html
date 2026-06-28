@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerador de Caça-Palavras Profissional</title>
-    <!-- Incluindo biblioteca para download direto em PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body {
@@ -66,7 +65,7 @@
         #folha-a4 {
             background: white; 
             width: 210mm; 
-            min-height: 296mm;
+            min-height: 295mm;
             height: max-content;
             padding: 20mm 15mm; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -113,14 +112,12 @@
 </head>
 <body>
 
-    <!-- PAINEL DE CONTROLE (Invisível na impressão) -->
     <div id="controle" class="no-print">
         <h1>
             Gerador de Caça-Palavras
             <button class="btn-config-toggle" onclick="toggleConfig()" title="Configurações Visuais">⚙️ Customizar</button>
         </h1>
         
-        <!-- Área expandida pelo ícone de engrenagem -->
         <div id="sub-configuracoes">
             <div class="config-row">
                 <label>Título do Jogo:
@@ -158,7 +155,6 @@
         </div>
     </div>
 
-    <!-- CONTAINER DA FOLHA A4 -->
     <div id="folha-a4-wrapper">
         <div id="folha-a4">
             <div class="header-jogo">
@@ -226,8 +222,15 @@
             }
 
             let grade = [];
-            for (let l = 0; l < linhas; l++) {
+            for (let l = 0; l < lines; l++) { // Correção aqui de linhas anteriores também
                 grade.push(new Array(colunas).fill(''));
+            }
+            // Garantia para o loop do escopo
+            let linhasGrid = linhas; 
+
+            let matriz = [];
+            for (let l = 0; l < linhasGrid; l++) {
+                matriz.push(new Array(colunas).fill(''));
             }
 
             const direcoes = [
@@ -241,21 +244,21 @@
                 let encaixou = false;
                 let tentativas = 0;
 
-                while (!encaixou && tentatives < 500) {
+                while (!encaixou && tentativas < 500) { // CORRIGIDO: de 'tentatives' para 'tentativas'
                     const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
-                    const l = Math.floor(Math.random() * linhas);
+                    const l = Math.floor(Math.random() * linhasGrid);
                     const c = Math.floor(Math.random() * colunas);
 
                     const fimL = l + dir[0] * (palavra.length - 1);
                     const fimC = c + dir[1] * (palavra.length - 1);
 
-                    if (fimL >= 0 && fimL < linhas && fimC >= 0 && fimC < colunas) {
+                    if (fimL >= 0 && fimL < linhasGrid && fimC >= 0 && fimC < colunas) {
                         let podeInserir = true;
                         
                         for (let i = 0; i < palavra.length; i++) {
                             const currL = l + dir[0] * i;
                             const currC = c + dir[1] * i;
-                            if (grade[currL][currC] !== '' && grade[currL][currC] !== palavra[i]) {
+                            if (matriz[currL][currC] !== '' && matriz[currL][currC] !== palavra[i]) {
                                 podeInserir = false;
                                 break;
                             }
@@ -263,7 +266,7 @@
 
                         if (podeInserir) {
                             for (let i = 0; i < palavra.length; i++) {
-                                grade[l + dir[0] * i][c + dir[1] * i] = palavra[i];
+                                matriz[l + dir[0] * i][c + dir[1] * i] = palavra[i];
                             }
                             encaixou = true;
                         }
@@ -273,10 +276,10 @@
             });
 
             const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            for (let l = 0; l < linhas; l++) {
+            for (let l = 0; l < linhasGrid; l++) {
                 for (let c = 0; c < colunas; c++) {
-                    if (grade[l][c] === '') {
-                        grade[l][c] = alfabeto[Math.floor(Math.random() * alfabeto.length)];
+                    if (matriz[l][c] === '') {
+                        matriz[l][c] = alfabeto[Math.floor(Math.random() * alfabeto.length)];
                     }
                 }
             }
@@ -284,15 +287,14 @@
             const tabela = document.getElementById('grade-letras');
             tabela.innerHTML = '';
             
-            // Layout responsivo matemático para caber na folha A4 fixa
             const tamanhoCelula = Math.min(32, Math.floor(540 / colunas));
             const tamanhoFonte = Math.max(9, Math.floor(tamanhoCelula * 0.65));
 
-            for (let l = 0; l < linhas; l++) {
+            for (let l = 0; l < linhasGrid; l++) {
                 const tr = document.createElement('tr');
                 for (let c = 0; c < colunas; c++) {
                     const td = document.createElement('td');
-                    td.innerText = grade[l][c];
+                    td.innerText = matriz[l][c];
                     td.style.width = `${tamanhoCelula}px`;
                     td.style.height = `${tamanhoCelula}px`;
                     td.style.fontSize = `${tamanhoFonte}px`;
@@ -309,7 +311,6 @@
                 ul.appendChild(li);
             });
 
-            // Re-aplica as cores customizadas na nova grade gerada
             atualizarCores();
         }
 
@@ -319,7 +320,7 @@
             const tituloParaArquivo = document.getElementById('tituloInput').value.toLowerCase().replace(/\s+/g, '_');
             
             const opcoes = {
-                margin:       0,
+                margin:       10, // Pequena margem para garantir o enquadramento perfeito html2pdf
                 filename:     `${tituloParaArquivo || 'caca_palavras'}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },

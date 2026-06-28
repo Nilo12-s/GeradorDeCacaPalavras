@@ -172,19 +172,16 @@
     </div>
 
     <script>
-        // Alterna a exibição das configurações avançadas (engrenagem)
         function toggleConfig() {
             const sub = document.getElementById('sub-configuracoes');
             sub.style.display = sub.style.display === 'block' ? 'none' : 'block';
         }
 
-        // Atualiza dinamicamente o título e subtítulo enquanto o usuário digita
         function atualizarTextos() {
             document.getElementById('tituloJogo').innerText = document.getElementById('tituloInput').value;
             document.getElementById('subtituloJogo').innerText = document.getElementById('subtituloInput').value;
         }
 
-        // Atualiza as cores das bordas em tempo real usando os seletores de cor (sliders)
         function atualizarCores() {
             const corExterna = document.getElementById('corBordaExterna').value;
             const corInterna = document.getElementById('corBordaInterna').value;
@@ -221,15 +218,9 @@
                 }
             }
 
-            let grade = [];
-            for (let l = 0; l < lines; l++) { // Correção aqui de linhas anteriores também
-                grade.push(new Array(colunas).fill(''));
-            }
-            // Garantia para o loop do escopo
-            let linhasGrid = linhas; 
-
+            // Inicializando a matriz corretamente
             let matriz = [];
-            for (let l = 0; l < linhasGrid; l++) {
+            for (let l = 0; l < linhas; l++) {
                 matriz.push(new Array(colunas).fill(''));
             }
 
@@ -244,15 +235,15 @@
                 let encaixou = false;
                 let tentativas = 0;
 
-                while (!encaixou && tentativas < 500) { // CORRIGIDO: de 'tentatives' para 'tentativas'
+                while (!encaixou && tentativas < 500) {
                     const dir = direcoes[Math.floor(Math.random() * direcoes.length)];
-                    const l = Math.floor(Math.random() * linhasGrid);
+                    const l = Math.floor(Math.random() * linhas);
                     const c = Math.floor(Math.random() * colunas);
 
                     const fimL = l + dir[0] * (palavra.length - 1);
                     const fimC = c + dir[1] * (palavra.length - 1);
 
-                    if (fimL >= 0 && fimL < linhasGrid && fimC >= 0 && fimC < colunas) {
+                    if (fimL >= 0 && fimL < linhas && fimC >= 0 && fimC < colunas) {
                         let podeInserir = true;
                         
                         for (let i = 0; i < palavra.length; i++) {
@@ -276,7 +267,7 @@
             });
 
             const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            for (let l = 0; l < linhasGrid; l++) {
+            for (let l = 0; l < linhas; l++) {
                 for (let c = 0; c < colunas; c++) {
                     if (matriz[l][c] === '') {
                         matriz[l][c] = alfabeto[Math.floor(Math.random() * alfabeto.length)];
@@ -290,7 +281,7 @@
             const tamanhoCelula = Math.min(32, Math.floor(540 / colunas));
             const tamanhoFonte = Math.max(9, Math.floor(tamanhoCelula * 0.65));
 
-            for (let l = 0; l < linhasGrid; l++) {
+            for (let l = 0; l < linhas; l++) {
                 const tr = document.createElement('tr');
                 for (let c = 0; c < colunas; c++) {
                     const td = document.createElement('td');
@@ -314,13 +305,12 @@
             atualizarCores();
         }
 
-        // FUNÇÃO PARA SALVAR E BAIXAR EM PDF DIRETO
         function baixarPDFDireto() {
             const elemento = document.getElementById('folha-a4');
             const tituloParaArquivo = document.getElementById('tituloInput').value.toLowerCase().replace(/\s+/g, '_');
             
             const opcoes = {
-                margin:       10, // Pequena margem para garantir o enquadramento perfeito html2pdf
+                margin:       10, 
                 filename:     `${tituloParaArquivo || 'caca_palavras'}.pdf`,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
